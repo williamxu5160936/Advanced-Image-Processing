@@ -280,7 +280,7 @@ def compute_mtf(self):
     r = int(round(float(self.radius), 0))
     mtf_final = []
     yen = []
-    bounds = np.linspace(0, r, r * 10)
+    bounds = np.linspace(0, r, r)
     N = 1440
     # sample spacing: 0.5 degree
     T = np.pi / 720
@@ -363,21 +363,37 @@ def compute_mtf(self):
         #     yen.append(0.0)
 
     # mtf_final_smooth = mtf_final_smooth[1024:1151] / np.amax(mtf_final_smooth[1024:1151])
-    xr = np.linspace(0, r, r * 10)
+    xr = np.linspace(0, r, r)
 
     fig, ax = plt.subplots()
     # #plt.subplot(2, 1, 1)
     #db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
-    db_3_interp = np.interp(math.sqrt(2)/2.0 * max, mtf_final, xr)
+    db_3_interp = np.interp(0.5 * max, mtf_final, xr)
     #print('db3 interp')
-    ax.plot(1/db_3_interp, math.sqrt(2)/2.0 * max, marker="o", ls="", ms=3)
-    ax.plot(1/xr, mtf_final)
-    ax.set(xlim=(1/self.radius, 0.5), ylim=(1, max*10))
-    plt.yscale("log")
-    plt.xlabel("radius^-1")
+    ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
+    ax.plot(1/(2.0 * np.pi * xr), mtf_final)
+    ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
+    #plt.yscale("log")
+    #plt.xscale("log")
+    plt.xlabel("spatial frequency(AU)")
     plt.ylabel("amplitude of central peak")
+    plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
     plt.show()
 
+    # fig, ax = plt.subplots()
+    # # #plt.subplot(2, 1, 1)
+    # # db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
+    # db_3_interp = np.interp(0.5 * max, mtf_final, xr)
+    # # print('db3 interp')
+    # ax.plot(qf * 1 / db_3_interp, 0.5 * max, marker="o", ls="", ms=3)
+    # ax.plot(qf * 1 / xr, mtf_final)
+    # # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
+    # # plt.yscale("log")
+    # # plt.xscale("log")
+    # plt.xlabel("spatial frequency(AU)")
+    # plt.ylabel("amplitude of central peak")
+    # plt.title('3db point at spatial frequency' + str(round(qf * 1 / db_3_interp, 4)))
+    # plt.show()
     #need to find 3db point
 
 
