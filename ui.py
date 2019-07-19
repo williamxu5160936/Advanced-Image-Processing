@@ -34,47 +34,47 @@ class UIProject(tk.Tk):
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Start Page")
+        label = tk.Label(self, text="   Advanced Image Processing")
         label.pack(pady=10, padx=10)
         self.mode = 'Manual Mode'
 
         select_button = tk.Button(self, text="Select File",
                                   command=self.fileselect_button)
-        select_button.pack()
+        select_button.pack(side=TOP, fill=BOTH)
         self.manual_button = tk.Button(self, text="Manual Mode", command=self.manual_mode)
-        self.manual_button.pack()
+        self.manual_button.pack(side=TOP, fill=BOTH)
         self.auto_button = tk.Button(self, text="Auto Mode", command=self.auto_mode)
-        self.auto_button.pack()
+        self.auto_button.pack(side=TOP, fill=BOTH)
         self.setval_button = tk.Button(self, text="press ok to set values", command=self.ok_pressed)
-        self.setval_button.pack()
+        self.setval_button.pack(side=TOP, fill=BOTH)
 
         self.pixelplot_button = tk.Button(self, text="pixel plot", command=self.drawPlot)
-        self.pixelplot_button.pack()
+        self.pixelplot_button.pack(side=TOP, fill=BOTH)
 
         self.fft_button = tk.Button(self, text="generate FFT plot(frq v amp)", command=self.drawfft)
-        self.fft_button.pack()
+        self.fft_button.pack(side=TOP, fill=BOTH)
 
         self.fft_degrees_button = tk.Button(self, text="FFT plot(amplitude at angle(deg)", command=self.draw_deg_fft)
-        self.fft_degrees_button.pack()
+        self.fft_degrees_button.pack(side=TOP, fill=BOTH)
 
         self.mtf_button = tk.Button(self, text="generate MTF plot", command=self.compute_mtf)
-        self.mtf_button.pack()
+        self.mtf_button.pack(side=TOP, fill=BOTH)
 
         self.radiusT = StringVar()
-        radius_label = tk.Label(self, text="Radius").pack(pady=30)
-        self.radius_box = Entry(self, textvariable=self.radiusT, width=25, bg="Lightgreen").place(x=180, y=272)
+        radius_label = tk.Label(self, text="Radius:").pack(pady=30)
+        self.radius_box = Entry(self, textvariable=self.radiusT, width=25, bg="Lightgreen").place(x=180, y=300)
         self.radiusT.set("0")
         self.radius = int(self.radiusT.get())
 
         self.xT = StringVar()
         xCenter_label = tk.Label(self, text="X coordinate of pattern center:").pack(pady=0)
-        self.xCenter_box = Entry(self, textvariable=self.xT, width=25, bg="Lightgreen").place(x=180, y=322)
+        self.xCenter_box = Entry(self, textvariable=self.xT, width=25, bg="Lightgreen").place(x=180, y=350)
         self.xT.set("0")
         self.x_center = int(self.xT.get())
 
         self.yT = StringVar()
         yCenter_label = tk.Label(self, text="Y coordinate of pattern center:").pack(pady=30)
-        self.yCenter_box = Entry(self, textvariable=self.yT, width=25, bg="Lightgreen").place(x=180, y=372)
+        self.yCenter_box = Entry(self, textvariable=self.yT, width=25, bg="Lightgreen").place(x=180, y=400)
         self.yT.set("0")
         self.y_center = int(self.yT.get())
 
