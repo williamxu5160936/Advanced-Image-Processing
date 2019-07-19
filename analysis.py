@@ -307,9 +307,9 @@ def compute_mtf(self):
     mtf = np.absolute(scipy.fftpack.fft(y - np.mean(y)))
     func = 2.0 / N * np.abs(mtf[:N // 2])
     max = np.amax(func)
-    en_max, ind = find_energy(self, r)
+    #en_max, ind = find_energy(self, r)
     # print(ind)
-
+    qf, main_index = find_main_peak(self)
     for ri in bounds:
         N = 1440
         # sample spacing: 0.5 degree
@@ -337,30 +337,30 @@ def compute_mtf(self):
 
         mtf = np.absolute(scipy.fftpack.fft(y - np.mean(y)))
         func = 2.0 / N * np.abs(mtf[:N // 2])
-        n, positions = find_energy(self, ri)
+        #n, positions = find_energy(self, ri)
         # print('main peak')
-        qf, main_index = find_main_peak(self)
+
         peaks, indexes = find_peaks(self)
-        print('qf' + str(qf))
+        #print('qf' + str(qf))
         ap = 0.0
         for peak in range(len(peaks)):
             if abs(peaks[peak] - qf) < 0.01:
-                ap = func[indexes[peak]] / max
+                ap = func[indexes[peak]]
         mtf_final.append(ap)
         # print((np.max(y) - np.min(y)) / np.amax(mtf))
 
         # ---------------------energy
 
         # print(positions)
-        if len(n) > 0:
-            q = 0.0
-            for i in range(len(positions)):
-                if math.fabs(positions[i] - qf) < 0.01:
-                    q = n[i]
-
-            yen.append(q / np.sum(n))
-        else:
-            yen.append(0.0)
+        # if len(n) > 0:
+        #     q = 0.0
+        #     for i in range(len(positions)):
+        #         if math.fabs(positions[i] - qf) < 0.01:
+        #             q = n[i]
+        #
+        #     yen.append(q / np.sum(n))
+        # else:
+        #     yen.append(0.0)
 
     # mtf_final_smooth = mtf_final_smooth[1024:1151] / np.amax(mtf_final_smooth[1024:1151])
     xr = np.linspace(0, r, r * 10)
@@ -368,10 +368,14 @@ def compute_mtf(self):
     fig, ax = plt.subplots()
     # #plt.subplot(2, 1, 1)
     #db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
-    db_3_interp = np.interp(math.sqrt(2)/2.0, mtf_final, xr)
-    print('db3 interp')
-    print(db_3_interp)
-    ax.plot(xr, mtf_final)
+    db_3_interp = np.interp(math.sqrt(2)/2.0 * max, mtf_final, xr)
+    #print('db3 interp')
+    ax.plot(1/db_3_interp, math.sqrt(2)/2.0 * max, marker="o", ls="", ms=3)
+    ax.plot(1/xr, mtf_final)
+    ax.set(xlim=(1/self.radius, 0.5), ylim=(1, max*10))
+    plt.yscale("log")
+    plt.xlabel("radius^-1")
+    plt.ylabel("amplitude of central peak")
     plt.show()
 
     #need to find 3db point
@@ -379,7 +383,7 @@ def compute_mtf(self):
 
     # plt.subplot(2, 1, 2)
 
-    ax.plot(xr, yen)
-    plt.xlabel('Radius')
-    plt.ylabel('Energy pctg of Central Peak')
-    plt.show()
+    # ax.plot(xr, yen)
+    # plt.xlabel('Radius')
+    # plt.ylabel('Energy pctg of Central Peak')
+    # plt.show()
