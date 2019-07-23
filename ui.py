@@ -48,8 +48,14 @@ class StartPage(tk.Frame):
         self.setval_button = tk.Button(self, text="press ok to set values", command=self.ok_pressed)
         self.setval_button.pack(side=TOP, fill=BOTH)
 
-        self.pixelplot_button = tk.Button(self, text="pixel plot", command=self.drawPlot)
-        self.pixelplot_button.pack(side=TOP, fill=BOTH)
+        self.pixelplot0_button = tk.Button(self, text="interpolate nearest pixel", command=self.drawPlotNearest)
+        self.pixelplot0_button.pack(side=TOP, fill=BOTH)
+        
+        self.pixelplot1_button = tk.Button(self, text="interpolate linear", command=self.drawPlotLinear)
+        self.pixelplot1_button.pack(side=TOP, fill=BOTH)
+        
+        self.pixelplot3_button = tk.Button(self, text="interpolate cubic", command=self.drawPlotCubic)
+        self.pixelplot3_button.pack(side=TOP, fill=BOTH)
 
         self.fft_button = tk.Button(self, text="generate FFT plot(frq v amp)", command=self.drawfft)
         self.fft_button.pack(side=TOP, fill=BOTH)
@@ -96,8 +102,14 @@ class StartPage(tk.Frame):
     def fileselect_button(self):
         uc.fileselect_button(self)
 
-    def drawPlot(self):
-        an.drawPlot(self)
+    def drawPlotNearest(self):
+        drawPlotNearest(self)
+
+    def drawPlotLinear(self):
+        drawPlot(self, 1)
+    
+    def drawPlotCubic(self):
+        drawPlot(self, 3)
 
     def drawfft(self):
         an.drawfft(self)
