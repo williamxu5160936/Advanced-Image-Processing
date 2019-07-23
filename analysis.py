@@ -8,7 +8,7 @@ import scipy as sp
 import scipy.interpolate
 from scipy import signal
 
-def drawPlot(self):
+def interpolate(self):
     z = self.image
 
     W = np.size(z, 1)
@@ -24,15 +24,20 @@ def drawPlot(self):
     interp = sp.interpolate.interp2d(x, y, z, 'cubic')
     vinterp = np.vectorize(interp)
 
-    plt.figure()
-
     arc = 8 * np.pi * r
     ang = np.linspace(0, 2 * np.pi, arc * 2, endpoint=False)
     val = vinterp(xcenter + r * np.sin(ang),
                   ycenter + r * np.cos(ang))
+
+    #returns the angle measures(rad) vs amplitude(greyscale values)
+    return ang, val
+def drawPlot(self):
+    plt.figure()
+    ang, val = interpolate(self)
+    r = int(round(self.radius, 0))
     plt.plot(ang * 180 / np.pi, val, label='r={}'.format(r))
     plt.xlabel('degrees from polar axis at r')
-    plt.ylabel('pixel values')
+    plt.ylabel('pixel greyscale values')
     plt.show()
 
 
@@ -42,7 +47,7 @@ def drawfft(self):
     index, properties = signal.find_peaks(func,
                                           height=None,
                                           threshold=None,
-                                          distance=None,
+                                          distance=5,
                                           prominence=10,
                                           width=None,
                                           wlen=None,
@@ -59,7 +64,10 @@ def drawfft(self):
         while i < len(maxs):
             if x == maxs[i]:
                 min.append(mins[i])
-                min.append(mins[i + 1])
+                if (i + 1 < len(mins)):
+                    min.append(mins[i + 1])
+                else:
+                    min.append(0)
             i += 1
     # i = 0
     # while i < len(index):
@@ -73,10 +81,15 @@ def drawfft(self):
     ax.plot(xf[index], func[index], marker="o", ls="", ms=3)
 
     ax.plot(xf[min], func[min], marker="o", ls="", ms=3)
+    peaks, ind = find_peaks(self)
+    ax.set(xlim=(0, 1.25*np.max(peaks)), ylim=(0, np.max(func) * 1.25))
 
+    main_x, ind_x = find_main_peak(self)
+    main_per = 1/main_x * 180/np.pi
     self.find_main_peak()
     plt.xlabel('frequency(Hz)')
     plt.ylabel('amplitude')
+    plt.title('periodicity at: ' + str(round(main_per, 2)))
     plt.show()
 
 
@@ -219,19 +232,6 @@ def get_fft(self):
     return xf, yf, N, func
 
 
-def draw_deg_fft(self):
-    # Number of samplepoints
-    xf, yf, N, func = get_fft(self)
-
-    xf = 1 / xf * 180.0 / np.pi
-    fig, ax = plt.subplots()
-
-    ax.plot(xf, 2.0 / N * np.abs(yf[:N // 2]))
-    plt.xlabel('Degree Measure')
-    plt.ylabel('amplitude')
-    plt.show()
-
-
 def find_peaks(self):
     # Number of samplepoints
     N = 720
@@ -279,41 +279,20 @@ def find_peaks(self):
 def compute_mtf(self):
     r = int(round(float(self.radius), 0))
     mtf_final = []
-    yen = []
     bounds = np.linspace(0, r, r)
-    N = 1440
-    # sample spacing: 0.5 degree
-    T = np.pi / 720
-    z = self.image
+    ang, val = interpolate(self)
+    N = len(ang)
 
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
-
-    xi = np.arange(W)
-    yi = np.arange(Y)
-
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
-
-    interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-    vinterp = np.vectorize(interp)
-
-    ang = np.linspace(0, N * T, N, endpoint=False)
-
-    N = ang.size
-    y = vinterp(xcenter + r * np.sin(ang),
-                ycenter + r * np.cos(ang))
-
-    mtf = np.absolute(scipy.fftpack.fft(y - np.mean(y)))
+    mtf = np.absolute(scipy.fftpack.fft(val - np.mean(val)))
     func = 2.0 / N * np.abs(mtf[:N // 2])
     max = np.amax(func)
-    #en_max, ind = find_energy(self, r)
     # print(ind)
     qf, main_index = find_main_peak(self)
+
     for ri in bounds:
-        N = 1440
+        N = 720
         # sample spacing: 0.5 degree
-        T = np.pi / 720
+        T = np.pi / 360
         z = self.image
 
         W = np.size(z, 1)
@@ -365,35 +344,36 @@ def compute_mtf(self):
     # mtf_final_smooth = mtf_final_smooth[1024:1151] / np.amax(mtf_final_smooth[1024:1151])
     xr = np.linspace(0, r, r)
 
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     # #plt.subplot(2, 1, 1)
     #db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
-    db_3_interp = np.interp(0.5 * max, mtf_final, xr)
-    #print('db3 interp')
-    ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
-    ax.plot(1/(2.0 * np.pi * xr), mtf_final)
-    ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
-    #plt.yscale("log")
-    #plt.xscale("log")
-    plt.xlabel("spatial frequency(AU)")
-    plt.ylabel("amplitude of central peak")
-    plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
-    plt.show()
-
-    # fig, ax = plt.subplots()
-    # # #plt.subplot(2, 1, 1)
-    # # db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
     # db_3_interp = np.interp(0.5 * max, mtf_final, xr)
-    # # print('db3 interp')
-    # ax.plot(qf * 1 / db_3_interp, 0.5 * max, marker="o", ls="", ms=3)
-    # ax.plot(qf * 1 / xr, mtf_final)
-    # # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
-    # # plt.yscale("log")
-    # # plt.xscale("log")
+    # #print('db3 interp')
+    # ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
+    # ax.plot(1/(2.0 * np.pi * xr), mtf_final)
+    # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
+    # #plt.yscale("log")
+    # #plt.xscale("log")
     # plt.xlabel("spatial frequency(AU)")
     # plt.ylabel("amplitude of central peak")
-    # plt.title('3db point at spatial frequency' + str(round(qf * 1 / db_3_interp, 4)))
+    # plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
     # plt.show()
+
+    fig, ax = plt.subplots()
+    # #plt.subplot(2, 1, 1)
+    # db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
+    db_3_interp = np.interp(0.5 * max, mtf_final, xr)
+    # print('db3 interp')
+    ax.plot(qf * 1 / db_3_interp, 0.5 * max, marker="o", ls="", ms=3)
+    ax.plot(qf * 1 / xr, mtf_final)
+    ax.set(xlim=(0, 0.75), ylim=(0, max * 1.25))
+    # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
+    # plt.yscale("log")
+    # plt.xscale("log")
+    plt.xlabel("spatial frequency(cycles/pixel)")
+    plt.ylabel("amplitude of central peak")
+    plt.title('3db point at spatial frequency ' + str(round(qf * 1 / db_3_interp, 4)) + ' cycles/pixel ')
+    plt.show()
     #need to find 3db point
 
 
