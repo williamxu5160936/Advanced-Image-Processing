@@ -103,13 +103,13 @@ class StartPage(tk.Frame):
         uc.fileselect_button(self)
 
     def drawPlotNearest(self):
-        drawPlotNearest(self)
+        an.drawPlotNearest(self)
 
     def drawPlotLinear(self):
-        drawPlot(self, 1)
+        an.drawPlot(self, 1)
     
     def drawPlotCubic(self):
-        drawPlot(self, 3)
+        an.drawPlot(self, 3)
 
     def drawfft(self):
         an.drawfft(self)
