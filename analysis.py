@@ -8,7 +8,51 @@ import scipy as sp
 import scipy.interpolate
 from scipy import signal
 
-def interpolate(self):
+def drawPlotNearest(self):
+    z = self.image
+
+    W = np.size(z, 1)
+    Y = np.size(z, 0)
+
+    x = np.arange(W)
+    y = np.arange(Y)
+
+    
+    xcenter = int(round(float(self.x_center), 0))
+    ycenter = int(round(float(self.y_center), 0))
+    r = int(round(float(self.radius), 0))
+
+    plt.figure()
+
+    arc = 8 * np.pi * r
+    
+    ang = np.linspace(0, 2 * np.pi, arc * 8 , endpoint=False)
+    xval = xcenter + r * np.sin(ang)
+    yval = ycenter + r * np.cos(ang)
+    
+    xvals = []
+    yvals = []
+    
+    i = 0
+    while (i < len(xval)):
+        xvals.append(int(round(xval[i])))
+        yvals.append(int(round(yval[i])))
+        i += 1
+    
+    i = 0
+    val = []
+    while (i < len(xvals)):
+        val.append(z[yvals[i]][xvals[i]])
+        i += 1
+    
+    
+    plt.plot(ang * 180 / np.pi, val, label='r={}'.format(r))
+    plt.xlabel('degrees from polar axis at r')
+    plt.ylabel('pixel values')
+    plt.show()
+
+    
+def drawPlot(self, num):
     z = self.image
 
     W = np.size(z, 1)
@@ -21,23 +65,21 @@ def interpolate(self):
     ycenter = int(round(float(self.y_center), 0))
     r = int(round(float(self.radius), 0))
 
-    interp = sp.interpolate.interp2d(x, y, z, 'cubic')
+    if(num == 1):
+        interp = sp.interpolate.interp2d(x, y, z, 'linear')
+    if(num == 3):
+        interp = sp.interpolate.interp2d(x, y, z, 'cubic')
     vinterp = np.vectorize(interp)
 
+    plt.figure()
+
     arc = 8 * np.pi * r
-    ang = np.linspace(0, 2 * np.pi, arc * 2, endpoint=False)
+    ang = np.linspace(0, 2 * np.pi, arc * 8, endpoint=False)
     val = vinterp(xcenter + r * np.sin(ang),
                   ycenter + r * np.cos(ang))
-
-    #returns the angle measures(rad) vs amplitude(greyscale values)
-    return ang, val
-def drawPlot(self):
-    plt.figure()
-    ang, val = interpolate(self)
-    r = int(round(self.radius, 0))
     plt.plot(ang * 180 / np.pi, val, label='r={}'.format(r))
     plt.xlabel('degrees from polar axis at r')
-    plt.ylabel('pixel greyscale values')
+    plt.ylabel('pixel values')
     plt.show()
 
 
