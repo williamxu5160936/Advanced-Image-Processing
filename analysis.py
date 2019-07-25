@@ -7,79 +7,77 @@ import peakutils
 import scipy as sp
 import scipy.interpolate
 from scipy import signal
+import cv2
 
-def drawPlotNearest(self):
-    z = self.image
+#mode = 1 for cubic spline, 0 for raw data
+def interpolate(self, mode):
+    if mode == 1:
+        z = self.image
 
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
+        W = np.size(z, 1)
+        Y = np.size(z, 0)
 
-    x = np.arange(W)
-    y = np.arange(Y)
+        x = np.arange(W)
+        y = np.arange(Y)
 
-    
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
-    r = int(round(float(self.radius), 0))
+        xcenter = int(round(float(self.x_center), 0))
+        ycenter = int(round(float(self.y_center), 0))
+        r = int(round(float(self.radius), 0))
 
-    plt.figure()
-
-    arc = 8 * np.pi * r
-    
-    ang = np.linspace(0, 2 * np.pi, arc * 8 , endpoint=False)
-    xval = xcenter + r * np.sin(ang)
-    yval = ycenter + r * np.cos(ang)
-    
-    xvals = []
-    yvals = []
-    
-    i = 0
-    while (i < len(xval)):
-        xvals.append(int(round(xval[i])))
-        yvals.append(int(round(yval[i])))
-        i += 1
-    
-    i = 0
-    val = []
-    while (i < len(xvals)):
-        val.append(z[yvals[i]][xvals[i]])
-        i += 1
-    
-    
-    plt.plot(ang * 180 / np.pi, val, label='r={}'.format(r))
-    plt.xlabel('degrees from polar axis at r')
-    plt.ylabel('pixel values')
-    plt.show()
-
-    
-def drawPlot(self, num):
-    z = self.image
-
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
-
-    x = np.arange(W)
-    y = np.arange(Y)
-
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
-    r = int(round(float(self.radius), 0))
-
-    if(num == 1):
-        interp = sp.interpolate.interp2d(x, y, z, 'linear')
-    if(num == 3):
         interp = sp.interpolate.interp2d(x, y, z, 'cubic')
-    vinterp = np.vectorize(interp)
+        vinterp = np.vectorize(interp)
 
+        arc = 8 * np.pi * r
+        ang = np.linspace(0, 2 * np.pi, int(round(arc * 2,0)), endpoint=False)
+        val = vinterp(xcenter + r * np.sin(ang),
+                      ycenter + r * np.cos(ang))
+
+        #returns the angle measures(rad) vs amplitude(greyscale values)
+        return ang, val
+    if mode == 0:
+        z = self.image
+
+        W = np.size(z, 1)
+        Y = np.size(z, 0)
+
+        x = np.arange(W)
+        y = np.arange(Y)
+
+        xcenter = int(round(float(self.x_center), 0))
+        ycenter = int(round(float(self.y_center), 0))
+        r = int(round(float(self.radius), 0))
+
+        plt.figure()
+
+        arc = 8 * np.pi * r
+
+        ang = np.linspace(0, 2 * np.pi, arc * 8, endpoint=False)
+        xval = xcenter + r * np.sin(ang)
+        yval = ycenter + r * np.cos(ang)
+
+        xvals = []
+        yvals = []
+
+        i = 0
+        while (i < len(xval)):
+            xvals.append(int(round(xval[i])))
+            yvals.append(int(round(yval[i])))
+            i += 1
+
+        i = 0
+        val = []
+        while (i < len(xvals)):
+            val.append(z[yvals[i]][xvals[i]])
+            i += 1
+        return ang, val
+
+def drawPlot(self):
     plt.figure()
-
-    arc = 8 * np.pi * r
-    ang = np.linspace(0, 2 * np.pi, arc * 8, endpoint=False)
-    val = vinterp(xcenter + r * np.sin(ang),
-                  ycenter + r * np.cos(ang))
+    ang, val = interpolate(self, 0)
+    r = int(round(self.radius, 0))
     plt.plot(ang * 180 / np.pi, val, label='r={}'.format(r))
     plt.xlabel('degrees from polar axis at r')
-    plt.ylabel('pixel values')
+    plt.ylabel('pixel greyscale values')
     plt.show()
 
 
@@ -129,9 +127,10 @@ def drawfft(self):
     main_x, ind_x = find_main_peak(self)
     main_per = 1/main_x * 180/np.pi
     self.find_main_peak()
-    plt.xlabel('frequency(Hz)')
+    plt.xlabel('frequency(1/rad)')
     plt.ylabel('amplitude')
-    plt.title('periodicity at: ' + str(round(main_per, 2)))
+    plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
+              + str(round(main_per, 2)) + ' degrees')
     plt.show()
 
 
@@ -183,7 +182,7 @@ def find_energy(self, ri):
                                           rel_height=None,
                                           plateau_size=None)
     peaks_x = peakutils.interpolate(xf, func, ind=index)
-    print(peaks_x)
+    #print(peaks_x)
 
     i = 0
     while i < len(peaks_x):
@@ -200,7 +199,7 @@ def find_energy(self, ri):
         width = abs(roots[e] - roots[e - 1])
         if width > 0.5:
             width = 0.5
-        print('width": ' + str(width))
+        #print('width": ' + str(width))
         ys = []
         start = peaks_x[i] - width
 
@@ -213,12 +212,12 @@ def find_energy(self, ri):
         energy = 0
         for c in ys:
             energy += (c ** 2 * width / num)
-        if energy < 0:
-            print(energy)
-        print(math.sqrt(energy))
+        #if energy < 0:
+            #print(energy)
+        #print(math.sqrt(energy))
         en.append(math.sqrt(energy))
         i += 1
-    print(en)
+    #print(en)
     return en, xf[index]
 
 
@@ -322,7 +321,7 @@ def compute_mtf(self):
     r = int(round(float(self.radius), 0))
     mtf_final = []
     bounds = np.linspace(0, r, r)
-    ang, val = interpolate(self)
+    ang, val = interpolate(self, 1)
     N = len(ang)
 
     mtf = np.absolute(scipy.fftpack.fft(val - np.mean(val)))
@@ -401,21 +400,24 @@ def compute_mtf(self):
     # plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
     # plt.show()
 
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     # #plt.subplot(2, 1, 1)
     # db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
     db_3_interp = np.interp(0.5 * max, mtf_final, xr)
     # print('db3 interp')
-    ax.plot(qf * 1 / db_3_interp, 0.5 * max, marker="o", ls="", ms=3)
-    ax.plot(qf * 1 / xr, mtf_final)
-    ax.set(xlim=(0, 0.75), ylim=(0, max * 1.25))
+    # ax.plot(qf * 1 /self.radius, max, marker="o", ls="", ms=3)
+    # ax.plot(qf * 1 / db_3_interp, 0.5 * max, marker="o", ls="", ms=3)
+    # ax.plot(qf * 1 / xr, mtf_final)
+    # ax.set(xlim=(0, 1.0), ylim=(0, max * 1.25))
+
+    return qf * 1/xr, mtf_final, qf * 1/db_3_interp, qf*1/self.radius, max
     # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
     # plt.yscale("log")
     # plt.xscale("log")
-    plt.xlabel("spatial frequency(cycles/pixel)")
-    plt.ylabel("amplitude of central peak")
-    plt.title('3db point at spatial frequency ' + str(round(qf * 1 / db_3_interp, 4)) + ' cycles/pixel ')
-    plt.show()
+    # plt.xlabel("spatial frequency(1/pixel)")
+    # plt.ylabel("amplitude of central peak")
+    # plt.title('3db point at spatial frequency ' + str(round(qf * 1 / db_3_interp, 4)) + ' cycles/pixel ')
+    # plt.show()
     #need to find 3db point
 
 
@@ -425,3 +427,40 @@ def compute_mtf(self):
     # plt.xlabel('Radius')
     # plt.ylabel('Energy pctg of Central Peak')
     # plt.show()
+
+def plot_mtf(self):
+    spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self)
+    fig, ax = plt.subplots()
+    ax.plot(spatial, contrast)
+    ax.plot(spatial_db3, max*.5, marker="o", ls="", ms=3)
+    ax.plot(start_spatial, max, marker="o", ls="", ms=3)
+    ax.set(xlim=(0, 1.0), ylim=(0, max * 1.25))
+    plt.xlabel("spatial frequency(1/pixel)")
+    plt.ylabel("amplitude of central peak")
+    plt.title('3db point at spatial frequency ' + str(round(spatial_db3, 4)) + ' cycles/pixel ')
+    plt.show()
+
+class selection():
+    def __init__(self, x, y, r, filename):
+        self.image = cv2.imread(filename, -1)
+        self.x_center = x
+        self.y_center = y
+        self.radius = r
+
+
+if __name__ == '__main__':
+    keeprunning = True
+    while keeprunning:
+        filename = input('Enter File Name: ')
+        pattern_center_x = float(input('enter pattern center X coordinate: '))
+        pattern_center_y = float(input('enter pattern center Y coordinate: '))
+        pattern_radius = float(input('enter radius of selection: '))
+        user_select = selection(float(pattern_center_x), float(pattern_center_y), float(pattern_radius), filename)
+        task_perform = int(input('enter 1 to find pattern frequency, 2 to find spatial frequency of 3dB point: '))
+        if task_perform == 2:
+            spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self=user_select)
+            print('3dB point at spatial frequency ' + str(spatial_db3) + ' pixel^-1')
+
+
+
+
