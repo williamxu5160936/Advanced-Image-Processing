@@ -51,7 +51,7 @@ class StartPage(tk.Frame):
         self.setval_button = tk.Button(self, text="press ok to set values", command=self.ok_pressed)
         self.setval_button.pack(fill = BOTH)
 
-        self.pixelplot0_button = tk.Button(self, text="interpolate nearest pixel", command=self.drawPlotNearest)
+        self.pixelplot0_button = tk.Button(self, text="raw data", command=self.drawPlotNearest)
         self.pixelplot0_button.pack(side = LEFT, fill = BOTH)
         
         
