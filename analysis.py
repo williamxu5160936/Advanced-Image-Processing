@@ -386,47 +386,18 @@ def compute_mtf(self):
     xr = np.linspace(0, r, r)
 
     #fig, ax = plt.subplots()
-    # #plt.subplot(2, 1, 1)
-    #db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
-    # db_3_interp = np.interp(0.5 * max, mtf_final, xr)
-    # #print('db3 interp')
-    # ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
+    #start = np.interp(max, mtf_final, xr)
+    db_3_interp = np.interp(0.5 * max, mtf_final, xr)
+    #ax.plot(1/(2.0 * np.pi * start), max, marker="o", ls="", ms=3)
+    #ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
     # ax.plot(1/(2.0 * np.pi * xr), mtf_final)
     # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
-    # #plt.yscale("log")
-    # #plt.xscale("log")
     # plt.xlabel("spatial frequency(AU)")
     # plt.ylabel("amplitude of central peak")
     # plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
     # plt.show()
 
-    #fig, ax = plt.subplots()
-    # #plt.subplot(2, 1, 1)
-    # db_interp = sp.interpolate.interp1d(xr, mtf_final, 'cubic')
-    db_3_interp = np.interp(0.5 * max, mtf_final, xr)
-    # print('db3 interp')
-    # ax.plot(qf * 1 /self.radius, max, marker="o", ls="", ms=3)
-    # ax.plot(qf * 1 / db_3_interp, 0.5 * max, marker="o", ls="", ms=3)
-    # ax.plot(qf * 1 / xr, mtf_final)
-    # ax.set(xlim=(0, 1.0), ylim=(0, max * 1.25))
-
     return qf * 1/xr, mtf_final, qf * 1/db_3_interp, qf*1/self.radius, max
-    # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
-    # plt.yscale("log")
-    # plt.xscale("log")
-    # plt.xlabel("spatial frequency(1/pixel)")
-    # plt.ylabel("amplitude of central peak")
-    # plt.title('3db point at spatial frequency ' + str(round(qf * 1 / db_3_interp, 4)) + ' cycles/pixel ')
-    # plt.show()
-    #need to find 3db point
-
-
-    # plt.subplot(2, 1, 2)
-
-    # ax.plot(xr, yen)
-    # plt.xlabel('Radius')
-    # plt.ylabel('Energy pctg of Central Peak')
-    # plt.show()
 
 def plot_mtf(self):
     spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self)
