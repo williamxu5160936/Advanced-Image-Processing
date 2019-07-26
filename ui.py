@@ -19,10 +19,9 @@ class UIProject(tk.Tk):
 
         self.frames = {}
 
-        for F in (StartPage, PageOne):
-            frame = F(container, self)
-            self.frames[F] = frame
-            frame.grid(row=0, column=0, sticky="nsew")
+         frame = StartPage(container, self)
+         self.frames[StartPage] = frame
+         frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame(StartPage)
 
@@ -134,24 +133,6 @@ class StartPage(tk.Frame):
 
     def compute_mtf(self):
         an.compute_mtf(self)
-
-
-class PageOne(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Page One")
-        label.pack(pady=10, padx=10)
-
-        button1 = tk.Button(self, text="Back to Start Page",
-                            command=lambda: controller.show_frame(StartPage))
-        button1.pack()
-
-        f = Figure(figsize=(5, 5), dpi=100)
-        a = f.add_subplot(111)
-
-        canvas = FigureCanvasTkAgg(f, self)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 
 app = UIProject()
