@@ -402,7 +402,7 @@ def compute_mtf(self):
 def plot_mtf(self):
     spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self)
     fig, ax = plt.subplots()
-    ax.plot(spatial[1:], contrast[1:])
+    ax.plot(spatial, contrast)
     ax.plot(spatial_db3, max*.5, marker="o", ls="", ms=3)
     ax.plot(start_spatial, max, marker="o", ls="", ms=3)
     ax.set(xlim=(0, 1.0), ylim=(0, max * 1.25))
