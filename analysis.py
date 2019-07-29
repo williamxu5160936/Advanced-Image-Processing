@@ -53,16 +53,23 @@ def interpolate(self, mode):
         ang = []
         angle = 0.0
         while angle < 360:
-            print(angle)
             xI = int(round(xcenter + r * math.cos(2.0 * math.pi * angle / 360.0), 0))
             yI = int(round(ycenter + r * math.sin(2.0 * math.pi * angle / 360.0), 0))
             angle = angle + (360 / (2 * math.pi * self.radius))
             if xI >= 0 and xI < len(z[0]) and yI >= 0 and yI < len(z):
                 circumference_pixels.append(z[yI][xI])
-                ang.append(angle * np.pi/180)
+                ang.append(retAngle(xcenter, ycenter, xI, yI))
         ang = np.asarray(ang)
         circumference_pixels = np.asarray(circumference_pixels)
+        circumference_pixels = [x for _,x in sorted(zip(ang,circumference_pixels))]
+        ang.sort()
         return ang, circumference_pixels
+    
+def retAngle(xcenter, ycenter, xI, yI):
+    ans = math.degrees(math.atan2(yI-ycenter, xI-xcenter))
+    if(ans < 0):
+        ans += 360
+    return ans
 
 def drawPlot(self):
     plt.figure()
