@@ -10,7 +10,7 @@ import user_controls as uc
 class UIProject(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-        self.geometry("400x375")
+        self.geometry("300x375")
         self.resizable(0, 0)
         
         container = tk.Frame(self)
