@@ -36,6 +36,10 @@ class UIProject(tk.Tk):
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        
+        bottomFrame = Frame(self)
+        bottomFrame.pack(side = BOTTOM, fill = BOTH)
+        
         label = tk.Label(self, text="   Advanced Image Processing")
         label.pack(pady=10, padx=10)
         self.mode = 'Manual Mode'
