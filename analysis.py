@@ -28,7 +28,7 @@ def interpolate(self, mode):
         vinterp = np.vectorize(interp)
 
         arc = 8 * np.pi * r
-        ang = np.linspace(0, 2 * np.pi, int(round(arc * 2,0)), endpoint=False)
+        ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
         val = vinterp(xcenter + r * np.sin(ang),
                       ycenter + r * np.cos(ang))
 
@@ -47,29 +47,22 @@ def interpolate(self, mode):
         ycenter = int(round(float(self.y_center), 0))
         r = int(round(float(self.radius), 0))
 
-        plt.figure()
-
         arc = 8 * np.pi * r
 
-        ang = np.linspace(0, 2 * np.pi, arc * 8, endpoint=False)
-        xval = xcenter + r * np.sin(ang)
-        yval = ycenter + r * np.cos(ang)
-
-        xvals = []
-        yvals = []
-
-        i = 0
-        while (i < len(xval)):
-            xvals.append(int(round(xval[i])))
-            yvals.append(int(round(yval[i])))
-            i += 1
-
-        i = 0
-        val = []
-        while (i < len(xvals)):
-            val.append(z[yvals[i]][xvals[i]])
-            i += 1
-        return ang, val
+        circumference_pixels = []
+        ang = []
+        angle = 0.0
+        while angle < 360:
+            print(angle)
+            xI = int(round(xcenter + r * math.cos(2.0 * math.pi * angle / 360.0), 0))
+            yI = int(round(ycenter + r * math.sin(2.0 * math.pi * angle / 360.0), 0))
+            angle = angle + (360 / (2 * math.pi * self.radius))
+            if xI >= 0 and xI < len(z[0]) and yI >= 0 and yI < len(z):
+                circumference_pixels.append(z[yI][xI])
+                ang.append(angle * np.pi/180)
+        ang = np.asarray(ang)
+        circumference_pixels = np.asarray(circumference_pixels)
+        return ang, circumference_pixels
 
 def drawPlot(self):
     plt.figure()
