@@ -27,8 +27,9 @@ def ok_pressed(self):
 def manual_mode(self):
     self.mode = 'Manual Mode'
     # print(self.mode)
-    for c in self.patches:
-        c.set_visible(False)
+    if(hasattr(StartPage, 'patches')):
+        for c in self.patches:
+            c.set_visible(False)
     plt.show()
 
 
