@@ -124,13 +124,22 @@ def drawfft(self):
     peaks, ind = find_peaks(self)
     ax.set(xlim=(0, 1.25*np.max(peaks)), ylim=(0, np.max(func) * 1.25))
 
-    main_x, ind_x = find_main_peak(self)
+    main_x = find_main_peak(self)
+    
+    other_x = find_other_peak(self)
+
+    
     main_per = 1/main_x * 180/np.pi
     self.find_main_peak()
     plt.xlabel('frequency(1/rad)')
     plt.ylabel('amplitude')
-    plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
-              + str(round(main_per, 2)) + ' degrees')
+    if(len(other_x) != 0):
+        plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
+                  + str(round(main_per, 2)) + ' degrees\nOther Peaks: ' + str(other_x))
+    else:
+        plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
+                  + str(round(main_per, 2)) + ' degrees')
+        
     plt.show()
 
 
@@ -225,7 +234,27 @@ def find_main_peak(self):
     r = int(round(float(self.radius), 0))
     en, ind = find_energy(self, r)
     p = max_pos(self, en)
-    return ind[p], p
+    return ind[p]
+
+def find_other_peak(self):
+    xf, yf, N, func = get_fft(self)  
+    index, properties = signal.find_peaks(func,
+                                          height=max(func)/2,
+                                          threshold=None,
+                                          distance=None,
+                                          prominence=10,
+                                          width=None,
+                                          wlen=None,
+                                          rel_height=None,
+                                          plateau_size=None)  
+    mainpeak = find_main_peak(self)
+    x = (xf[index]).tolist()
+    try:
+        x.remove(mainpeak)
+    except ValueError:
+        pass
+    y = np.interp(x, xf, func)
+    return y
 
 
 def max_pos(self, list):
@@ -328,7 +357,7 @@ def compute_mtf(self):
     func = 2.0 / N * np.abs(mtf[:N // 2])
     max = np.amax(func)
     # print(ind)
-    qf, main_index = find_main_peak(self)
+    qf = find_main_peak(self)
 
     for ri in bounds:
         N = 720
