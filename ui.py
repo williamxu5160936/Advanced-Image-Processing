@@ -55,7 +55,7 @@ class StartPage(tk.Frame):
         self.manual_button.pack(fill=BOTH)
         self.auto_button = tk.Button(self, text="Auto Mode", command=self.auto_mode)
         self.auto_button.pack(fill=BOTH)
-        self.setval_button = tk.Button(self, text="Press OK to Set Values", command=self.ok_pressed)
+        self.setval_button = tk.Button(self, text="Press to Set Values", command=self.ok_pressed)
         self.setval_button.pack(fill=BOTH)
         self.pixel_plot = tk.Button(self, text="Plot Data", command=self.draw_pixel_plot)
         self.pixel_plot.pack(fill=BOTH)
