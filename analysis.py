@@ -90,7 +90,7 @@ def drawfft(self):
     plt.ylabel('amplitude')
     if(len(other_x) != 0):
         plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
-                  + str(round(main_per, 2)) + ' degrees\nSecondary Peaks: ' + str(round(other_x[0], 2)) + ' rad^-1')
+                  + str(round(main_per, 2)) + ' degrees\nSecondary Peak: ' + str(round(other_x[0], 2)) + ' rad^-1')
     else:
         plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
                   + str(round(main_per, 2)) + ' degrees')
