@@ -199,7 +199,7 @@ def find_other_peak(self):
     #amp = np.interp(x, xf, func)
     return x
 
-def find_energy(self, ri):
+def find_amplitude(self, ri):
     en = []
     # indexes of the energies
     en_index = []
@@ -250,45 +250,15 @@ def find_energy(self, ri):
     #print(peaks_x)
 
     i = 0
-    while i < len(peaks_x):
-        half_max = np.interp(peaks_x[i], xf, func) / 2.0
-        s = sp.interpolate.UnivariateSpline(xf, func - half_max)
-        roots = s.roots()
-        closeleft = 0
-        closeright = len(xf)
-        e = 0
-        while e < len(roots) and roots[e] < peaks_x[i]:
-            e += 1
-        if e == len(roots):
-            e = len(roots) - 1
-        width = abs(roots[e] - roots[e - 1])
-        if width > 0.5:
-            width = 0.5
-        #print('width": ' + str(width))
-        ys = []
-        start = peaks_x[i] - width
-
-        a = 0
-        num = 5.0
-        while a <= num * 2:
-            ys.append(np.interp(start, xf, func))
-            start += width / num
-            a += 1
-        energy = 0
-        for c in ys:
-            energy += (c ** 2 * width / num)
-        #if energy < 0:
-            #print(energy)
-        #print(math.sqrt(energy))
-        en.append(math.sqrt(energy))
+    while (i < len(peaks_x)):
+        en.append(np.interp(peaks_x[i], xf, func))
         i += 1
-    #print(en)
     return en, xf[index]
 
 
 def find_main_peak(self):
     r = int(round(float(self.radius), 0))
-    en, ind = find_energy(self, r)
+    en, ind = find_amplitude(self, r)
     p = max_pos(self, en)
     return ind[p], p
 
