@@ -135,22 +135,6 @@ class StartPage(tk.Frame):
     def drawfft(self):
         an.drawfft(self, self.interp)
 
-    def find_energy(self, ri):
-        an.find_energy(self, ri)
-
-    def find_main_peak(self):
-        an.find_main_peak(self)
-
-    def max_pos(self, list):
-        an.max_pos(self, list)
-
-    def get_fft(self):
-        an.get_fft(self, self.interp)
-
-
-    def find_peaks(self):
-        an.find_peaks(self)
-
     def plot_mtf(self):
         an.plot_mtf(self, 1)
 
