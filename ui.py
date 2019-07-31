@@ -74,8 +74,8 @@ class StartPage(tk.Frame):
         self.fft_button.pack(fill=BOTH)
 
 
-        self.mtf_button = tk.Button(bottomFrame, text="generate MTF plot", command=self.plot_mtf)
-        self.mtf_button.pack(fill=BOTH)
+        self.ctf_button = tk.Button(bottomFrame, text="generate CTF plot", command=self.plot_ctf)
+        self.ctf_button.pack(fill=BOTH)
 
         self.radiusT = StringVar()
         radius_label = tk.Label(bottomFrame, text="Radius:").pack()
@@ -135,8 +135,8 @@ class StartPage(tk.Frame):
     def drawfft(self):
         an.drawfft(self)
 
-    def plot_mtf(self):
-        an.plot_mtf(self)
+    def plot_ctf(self):
+        an.plot_ctf(self)
 
 
 
