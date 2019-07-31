@@ -2,7 +2,6 @@ import matplotlib
 import numpy as np
 import math
 from matplotlib import pyplot as plt
-
 matplotlib.use("TkAgg")
 import peakutils
 import scipy as sp
@@ -10,21 +9,20 @@ import scipy.interpolate
 from scipy import signal
 import cv2
 
-
 def interpolate(self, mode):
+    z = self.image
+
+    W = np.size(z, 1)
+    Y = np.size(z, 0)
+
+    x = np.arange(W)
+    y = np.arange(Y)
+    r = int(round(float(self.radius), 0))
+    
+    xcenter = int(round(float(self.x_center), 0))
+    ycenter = int(round(float(self.y_center), 0))
+    
     if mode == 0:
-        z = self.image
-
-        W = np.size(z, 1)
-        Y = np.size(z, 0)
-
-        x = np.arange(W)
-        y = np.arange(Y)
-
-        xcenter = int(round(float(self.x_center), 0))
-        ycenter = int(round(float(self.y_center), 0))
-        r = int(round(float(self.radius), 0))
-
         arc = 8 * np.pi * r
 
         circumference_pixels = []
@@ -39,46 +37,30 @@ def interpolate(self, mode):
                 ang.append(retAngle(xcenter, ycenter, xI, yI))
         ang = np.asarray(ang)
         circumference_pixels = np.asarray(circumference_pixels)
-        circumference_pixels = [x for _, x in sorted(zip(ang, circumference_pixels))]
+        circumference_pixels = [x for _,x in sorted(zip(ang,circumference_pixels))]
         ang.sort()
         plt.title("raw data")
         return ang, circumference_pixels
-    else:
-        z = self.image
+    if mode == 1:
+        interp = sp.interpolate.interp2d(x, y, z, 'linear')
+        plt.title("linear interpolation")
+    if mode == 3:
+        interp = sp.interpolate.interp2d(x, y, z, 'cubic')
+        plt.title("cubic interpolation")
+        
+    vinterp = np.vectorize(interp)
 
-        W = np.size(z, 1)
-        Y = np.size(z, 0)
-
-        x = np.arange(W)
-        y = np.arange(Y)
-
-        xcenter = int(round(float(self.x_center), 0))
-        ycenter = int(round(float(self.y_center), 0))
-        r = int(round(float(self.radius), 0))
-
-        if mode == 1:
-            interp = sp.interpolate.interp2d(x, y, z, 'linear')
-            plt.title("linear interpolation")
-        if mode == 3:
-            interp = sp.interpolate.interp2d(x, y, z, 'cubic')
-            plt.title("cubic interpolation")
-        vinterp = np.vectorize(interp)
-
-        arc = 8 * np.pi * r
-        ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
-        val = vinterp(xcenter + r * np.sin(ang),
-                      ycenter + r * np.cos(ang))
-
-        # returns the angle measures(rad) vs amplitude(greyscale values)
-        return ang, val
-
+    arc = 8 * np.pi * r
+    ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
+    val = vinterp(xcenter + r * np.sin(ang),
+                  ycenter + r * np.cos(ang))
+    return ang, val
 
 def retAngle(xcenter, ycenter, xI, yI):
-    ans = math.degrees(math.atan2(yI - ycenter, xI - xcenter))
-    if (ans < 0):
+    ans = math.degrees(math.atan2(yI-ycenter, xI-xcenter))
+    if(ans < 0):
         ans += 360
     return ans
-
 
 def drawPlot(self, mode):
     plt.figure()
@@ -91,56 +73,22 @@ def drawPlot(self, mode):
 
 
 def drawfft(self):
-    xf, yf, N, func = get_fft(self)
+    xf, yf, N, func = get_fft(self, self.radius)
 
-    index, properties = signal.find_peaks(func,
-                                          height=None,
-                                          threshold=None,
-                                          distance=None,
-                                          prominence=10,
-                                          width=None,
-                                          wlen=None,
-                                          rel_height=None,
-                                          plateau_size=None)
-    maxs = signal.argrelmax(func)[0]
-    mins = signal.argrelmin(func)[0]
-    mins = np.insert(mins, 0, 0)
-
-    min = []
-
-    for x in index:
-        i = 0
-        while i < len(maxs):
-            if x == maxs[i]:
-                min.append(mins[i])
-                if (i + 1 < len(mins)):
-                    min.append(mins[i + 1])
-                else:
-                    min.append(0)
-            i += 1
-    # i = 0
-    # while i < len(index):
-    # energy = math.sqrt(sum(abs(func[min[i * 2]:min[i * 2 + 1]]) ** 2))
-    # print(energy)
-    # i += 1
+    peaks, index = find_peaks(self)
 
     fig, ax = plt.subplots()
     ax.plot(xf, func)
 
-    ax.plot(xf[index], func[index], marker="o", ls="", ms=3)
-
-    ax.plot(xf[min], func[min], marker="o", ls="", ms=3)
-    peaks, ind = find_peaks(self)
-    ax.set(xlim=(0, 1.25 * np.max(peaks)), ylim=(0, np.max(func) * 1.25))
+    ax.set(xlim=(0, 1.25*np.max(peaks)), ylim=(0, np.max(func) * 1.25))
 
     main_x = find_main_peak(self)
     other_x = find_other_peak(self)
-
-    main_per = 1 / main_x * 180 / np.pi
-    find_main_peak(self)
+    main_per = 1/main_x * 180/np.pi
+    
     plt.xlabel('frequency(1/rad)')
     plt.ylabel('amplitude')
-    if (len(other_x) != 0):
+    if(len(other_x) != 0):
         plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
                   + str(round(main_per, 2)) + ' degrees\nSecondary Peaks: ' + str(round(other_x[0], 2)) + ' rad^-1')
     else:
@@ -148,116 +96,44 @@ def drawfft(self):
                   + str(round(main_per, 2)) + ' degrees')
     plt.show()
 
-
-def draw_deg_fft(self):
-    # Number of samplepoints
-    xf, yf, N, func = self.get_fft()
-
-    xf = 1 / xf * 180.0 / np.pi
-    fig, ax = plt.subplots()
-
-    ax.plot(xf, 2.0 / N * np.abs(yf[:N // 2]))
-    plt.xlabel('Degree Measure')
-    plt.ylabel('amplitude')
-    plt.show()
-
-
-def find_energy(self, ri):
-    en = []
-    # indexes of the energies
-    en_index = []
-    # Number of samplepoints
-
-    N = 720
-    # sample spacing: 0.5 degree
-    T = np.pi / 360
-    z = self.image
-
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
-
-    xi = np.arange(W)
-    yi = np.arange(Y)
-
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
-    r = int(round(float(self.radius), 0))
-
-    interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-    vinterp = np.vectorize(interp)
-
-    ang = np.linspace(0, N * T, N, endpoint=False)
-
-    N = ang.size
-    y = vinterp(xcenter + ri * np.sin(ang),
-                ycenter + ri * np.cos(ang))
-
-    # y = scipy.signal.detrend(y)
-    yf = scipy.fftpack.fft(y - np.mean(y))
-
-    xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
-    # xf = 1 / xf * 180.0 / np.pi
-    func = 2.0 / N * np.abs(yf[:N // 2])
-
-    # index = peakutils.indexes(func)
-    index, properties = signal.find_peaks(func,
-                                          height=None,
-                                          threshold=None,
-                                          distance=5,
-                                          prominence=10,
-                                          width=None,
-                                          wlen=None,
-                                          rel_height=None,
-                                          plateau_size=None)
+    
+def find_amplitude(self):
+    xf, yf, N, func = get_fft(self, self.radius)
+    peaks, index = find_peaks(self)
+    amp = []
+    
     peaks_x = peakutils.interpolate(xf, func, ind=index)
-    print('index')
-    print(func[index])
-
-
-    return func[index], xf[index]
+    i = 0
+    while (i < len(peaks_x)):
+        amp.append(np.interp(peaks_x[i], xf, func))
+        i += 1
+    return amp, xf[index]
 
 
 def find_main_peak(self):
-    r = int(round(float(self.radius), 0))
-    en, ind = find_energy(self, r)
-    print(en)
-    p = max_pos(self, en)
+    amp, ind = find_amplitude(self)
+    max = 0
+    p = 0
+    for i in range(len(amp)):
+        if amp[i] > max:
+            max = amp[i]
+            p = i
     return ind[p]
 
-
 def find_other_peak(self):
-    xf, yf, N, func = get_fft(self)
-    index, properties = signal.find_peaks(func,
-                                          height=max(func) / 2,
-                                          threshold=None,
-                                          distance=None,
-                                          prominence=10,
-                                          width=None,
-                                          wlen=None,
-                                          rel_height=None,
-                                          plateau_size=None)
+    xf, yf, N, func = get_fft(self, self.radius)  
+    peaks, index = find_peaks(self)
     mainpeak = find_main_peak(self)
     x = xf[index].tolist()
     i = 0
-    while (i < len(x)):
-        if (abs(x[i] - mainpeak) < 1):
+    while(i < len(x)):
+        if(abs(x[i] - mainpeak) < 1):
             del x[i]
         i += 1
-    y = np.interp(x, xf, func)
     return x
 
 
-def max_pos(self, list):
-    max = 0
-    index = 0
-    for i in range(len(list)):
-        if list[i] > max:
-            max = list[i]
-            index = i
-    return index
-
-
-def get_fft(self):
+def get_fft(self, r):
     # Number of samplepoints
     N = 720
     # sample spacing: 0.5 degree
@@ -272,7 +148,6 @@ def get_fft(self):
 
     xcenter = int(round(float(self.x_center), 0))
     ycenter = int(round(float(self.y_center), 0))
-    r = int(round(float(self.radius), 0))
 
     interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
     vinterp = np.vectorize(interp)
@@ -293,37 +168,7 @@ def get_fft(self):
 
 
 def find_peaks(self):
-    # Number of samplepoints
-    N = 720
-    # sample spacing: 0.5 degree
-    T = np.pi / 360
-    z = self.image
-
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
-
-    xi = np.arange(W)
-    yi = np.arange(Y)
-
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
-    r = int(round(float(self.radius), 0))
-
-    interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-    vinterp = np.vectorize(interp)
-
-    arc = 2 * np.pi * r
-    ang = np.linspace(0, N * T, N, endpoint=False)
-
-    N = ang.size
-    y = vinterp(xcenter + r * np.sin(ang),
-                ycenter + r * np.cos(ang))
-
-    # y = scipy.signal.detrend(y)
-    yf = scipy.fftpack.fft(y - np.mean(y))
-
-    xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
-    func = 2.0 / N * np.abs(yf[:N // 2])
+    xf, yf, N, func = get_fft(self, self.radius)
     index, properties = signal.find_peaks(func,
                                           height=None,
                                           threshold=None,
@@ -336,94 +181,38 @@ def find_peaks(self):
     return xf[index], index
 
 
-def compute_mtf(self):
+def compute_ctf(self):
     r = int(round(float(self.radius), 0))
-    mtf_final = []
+    ctf_final = []
     bounds = np.linspace(0, r, r)
     ang, val = interpolate(self, 3)
     N = len(ang)
 
-    mtf = np.absolute(scipy.fftpack.fft(val - np.mean(val)))
-    func = 2.0 / N * np.abs(mtf[:N // 2])
+    ctf = np.absolute(scipy.fftpack.fft(val - np.mean(val)))
+    func = 2.0 / N * np.abs(ctf[:N // 2])
     max = np.amax(func)
     # print(ind)
     qf = find_main_peak(self)
 
     for ri in bounds:
-        N = 720
-        # sample spacing: 0.5 degree
-        T = np.pi / 360
-        z = self.image
-
-        W = np.size(z, 1)
-        Y = np.size(z, 0)
-
-        xi = np.arange(W)
-        yi = np.arange(Y)
-
-        xcenter = int(round(float(self.x_center), 0))
-        ycenter = int(round(float(self.y_center), 0))
-
-        interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-        vinterp = np.vectorize(interp)
-
-        ang = np.linspace(0, N * T, N, endpoint=False)
-
-        N = ang.size
-        y = vinterp(xcenter + ri * np.sin(ang),
-
-                    ycenter + ri * np.cos(ang))
-
-        mtf = np.absolute(scipy.fftpack.fft(y - np.mean(y)))
-        func = 2.0 / N * np.abs(mtf[:N // 2])
-        # n, positions = find_energy(self, ri)
-        # print('main peak')
+        xf, yf, N, func = get_fft(self, ri)
 
         peaks, indexes = find_peaks(self)
-        # print('qf' + str(qf))
         ap = 0.0
         for peak in range(len(peaks)):
             if abs(peaks[peak] - qf) < 0.01:
                 ap = func[indexes[peak]]
-        mtf_final.append(ap)
-        # print((np.max(y) - np.min(y)) / np.amax(mtf))
-
-        # ---------------------energy
-
-        # print(positions)
-        # if len(n) > 0:
-        #     q = 0.0
-        #     for i in range(len(positions)):
-        #         if math.fabs(positions[i] - qf) < 0.01:
-        #             q = n[i]
-        #
-        #     yen.append(q / np.sum(n))
-        # else:
-        #     yen.append(0.0)
-
-    # mtf_final_smooth = mtf_final_smooth[1024:1151] / np.amax(mtf_final_smooth[1024:1151])
+        ctf_final.append(ap)
     xr = np.linspace(0, r, r)
+    db_3_interp = np.interp(0.5 * max, ctf_final, xr)
 
-    # fig, ax = plt.subplots()
-    # start = np.interp(max, mtf_final, xr)
-    db_3_interp = np.interp(0.5 * max, mtf_final, xr)
-    # ax.plot(1/(2.0 * np.pi * start), max, marker="o", ls="", ms=3)
-    # ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
-    # ax.plot(1/(2.0 * np.pi * xr), mtf_final)
-    # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
-    # plt.xlabel("spatial frequency(AU)")
-    # plt.ylabel("amplitude of central peak")
-    # plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
-    # plt.show()
+    return qf * 1/xr, ctf_final, qf * 1/db_3_interp, qf*1/self.radius, max
 
-    return qf * 1 / xr, mtf_final, qf * 1 / db_3_interp, qf * 1 / self.radius, max
-
-
-def plot_mtf(self):
-    spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self)
+def plot_ctf(self):
+    spatial, contrast, spatial_db3, start_spatial, max = compute_ctf(self)
     fig, ax = plt.subplots()
     ax.plot(spatial, contrast)
-    ax.plot(spatial_db3, max * .5, marker="o", ls="", ms=3)
+    ax.plot(spatial_db3, max*.5, marker="o", ls="", ms=3)
     ax.plot(start_spatial, max, marker="o", ls="", ms=3)
     ax.set(xlim=(0, 1.0), ylim=(0, max * 1.25))
     plt.xlabel("spatial frequency(1/pixel)")
@@ -432,30 +221,3 @@ def plot_mtf(self):
     plt.show()
 
 
-class selection():
-    def __init__(self, x, y, r, filename):
-        self.image = cv2.imread(filename, -1)
-        self.x_center = x
-        self.y_center = y
-        self.radius = r
-
-
-if __name__ == '__main__':
-    keeprunning = True
-
-    while keeprunning:
-        filename = input('Enter File Name: ')
-        pattern_center_x = float(input('enter pattern center X coordinate: '))
-        pattern_center_y = float(input('enter pattern center Y coordinate: '))
-        pattern_radius = float(input('enter radius of selection: '))
-        user_select = selection(float(pattern_center_x), float(pattern_center_y), float(pattern_radius), filename)
-        task_perform = int(input('enter 1 to find pattern frequency, 2 to find spatial frequency of 3dB point: '))
-        if task_perform == 2:
-            spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self=user_select)
-            print('3dB point at spatial frequency ' + str(spatial_db3) + ' pixel^-1')
-        if task_perform == 1:
-            main_x= find_main_peak(self=user_select)
-            print('spoke pattern frequency at ' + str(round(main_x, 2)) + ' radian^-1')
-        continue_option = float(input('Enter 1 to continue, 0 to quit'))
-        if continue_option == 0:
-            keeprunning = False
