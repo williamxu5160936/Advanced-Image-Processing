@@ -96,7 +96,7 @@ class StartPage(tk.Frame):
         self.y_center = int(self.yT.get())
 
         #interpolation mode defaults to cubic spline
-        self.interp = 1
+        self.interp = 3
 
     def ok_pressed(self):
         uc.ok_pressed(self)
@@ -123,20 +123,20 @@ class StartPage(tk.Frame):
 
     def drawPlotLinear(self):
         #an.drawPlot(self, 1)
-        self.interp = 2
+        self.interp = 1
 
     def drawPlotCubic(self):
         #an.drawPlot(self, interp_mode = 1)
-        self.interp = 1
+        self.interp = 3
 
     def draw_pixel_plot(self):
         an.drawPlot(self, self.interp)
 
     def drawfft(self):
-        an.drawfft(self, self.interp)
+        an.drawfft(self)
 
     def plot_mtf(self):
-        an.plot_mtf(self, 1)
+        an.plot_mtf(self)
 
 
 
