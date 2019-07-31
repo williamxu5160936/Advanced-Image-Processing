@@ -39,14 +39,11 @@ def interpolate(self, mode):
         circumference_pixels = np.asarray(circumference_pixels)
         circumference_pixels = [x for _,x in sorted(zip(ang,circumference_pixels))]
         ang.sort()
-        plt.title("raw data")
         return ang, circumference_pixels
     if mode == 1:
         interp = sp.interpolate.interp2d(x, y, z, 'linear')
-        plt.title("linear interpolation")
     if mode == 3:
         interp = sp.interpolate.interp2d(x, y, z, 'cubic')
-        plt.title("cubic interpolation")
         
     vinterp = np.vectorize(interp)
 
