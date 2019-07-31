@@ -9,66 +9,53 @@ import scipy.interpolate
 from scipy import signal
 import cv2
 
-def interpolate(self, mode):
+def interpolate(self, mode, radius):
+    z = self.image
+
+    W = np.size(z, 1)
+    Y = np.size(z, 0)
+
+    x = np.arange(W)
+    y = np.arange(Y)
+
+    xcenter = int(round(float(self.x_center), 0))
+    ycenter = int(round(float(self.y_center), 0))
+    
     if mode == 0:
-        z = self.image
-
-        W = np.size(z, 1)
-        Y = np.size(z, 0)
-
-        x = np.arange(W)
-        y = np.arange(Y)
-
-        xcenter = int(round(float(self.x_center), 0))
-        ycenter = int(round(float(self.y_center), 0))
         r = int(round(float(self.radius), 0))
 
-        arc = 8 * np.pi * r
+        arc = 8 * np.pi * radius
 
         circumference_pixels = []
         ang = []
         angle = 0.0
         while angle < 360:
-            xI = int(round(xcenter + r * math.cos(2.0 * math.pi * angle / 360.0), 0))
-            yI = int(round(ycenter + r * math.sin(2.0 * math.pi * angle / 360.0), 0))
-            angle = angle + (360 / (2 * math.pi * self.radius))
+            xI = int(round(xcenter + radius * math.cos(2.0 * math.pi * angle / 360.0), 0))
+            yI = int(round(ycenter + radius * math.sin(2.0 * math.pi * angle / 360.0), 0))
+            #angle = angle + (360 / (2 * math.pi * self.radius))
+            angle = angle + 0.5
+
             if xI >= 0 and xI < len(z[0]) and yI >= 0 and yI < len(z):
                 circumference_pixels.append(z[yI][xI])
-                ang.append(retAngle(xcenter, ycenter, xI, yI))
+                #ang.append(retAngle(xcenter, ycenter, xI, yI))
+                ang.append(angle * np.pi/180)
         ang = np.asarray(ang)
         circumference_pixels = np.asarray(circumference_pixels)
-        circumference_pixels = [x for _,x in sorted(zip(ang,circumference_pixels))]
+        circumference_pixels = [x for _, x in sorted(zip(ang, circumference_pixels))]
         ang.sort()
-        plt.title("raw data")
         return ang, circumference_pixels
-    else:
-        z = self.image
+    if mode == 2:
+        interp = sp.interpolate.interp2d(x, y, z, 'linear')
+    if mode == 1:
+        interp = sp.interpolate.interp2d(x, y, z, 'cubic')
+        
+    vinterp = np.vectorize(interp)
 
-        W = np.size(z, 1)
-        Y = np.size(z, 0)
-
-        x = np.arange(W)
-        y = np.arange(Y)
-
-        xcenter = int(round(float(self.x_center), 0))
-        ycenter = int(round(float(self.y_center), 0))
-        r = int(round(float(self.radius), 0))
-
-        if mode == 1:
-            interp = sp.interpolate.interp2d(x, y, z, 'linear')
-            plt.title("linear interpolation")
-        if mode == 3:
-            interp = sp.interpolate.interp2d(x, y, z, 'cubic')
-            plt.title("cubic interpolation")
-        vinterp = np.vectorize(interp)
-
-        arc = 8 * np.pi * r
-        ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
-        val = vinterp(xcenter + r * np.sin(ang),
-                      ycenter + r * np.cos(ang))
-
-        #returns the angle measures(rad) vs amplitude(greyscale values)
-        return ang, val
+    arc = 8 * np.pi * radius
+    ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
+    val = vinterp(xcenter + radius * np.sin(ang),
+                    ycenter + radius * np.cos(ang))
+    return ang, val
 
 def retAngle(xcenter, ycenter, xI, yI):
     ans = math.degrees(math.atan2(yI-ycenter, xI-xcenter))
