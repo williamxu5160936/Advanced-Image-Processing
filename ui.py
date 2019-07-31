@@ -117,16 +117,12 @@ class StartPage(tk.Frame):
         uc.fileselect_button(self)
 
     def drawPlotNearest(self):
-        #an.drawPlotNearest(self)
-        #an.drawPlot(self, interp_mode = 0)
         self.interp = 0
 
     def drawPlotLinear(self):
-        #an.drawPlot(self, 1)
         self.interp = 1
 
     def drawPlotCubic(self):
-        #an.drawPlot(self, interp_mode = 1)
         self.interp = 3
 
     def draw_pixel_plot(self):
