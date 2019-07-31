@@ -55,26 +55,26 @@ class StartPage(tk.Frame):
         self.manual_button.pack(fill=BOTH)
         self.auto_button = tk.Button(self, text="Auto Mode", command=self.auto_mode)
         self.auto_button.pack(fill=BOTH)
-        self.setval_button = tk.Button(self, text="press ok to set values", command=self.ok_pressed)
+        self.setval_button = tk.Button(self, text="Press OK to Set Values", command=self.ok_pressed)
         self.setval_button.pack(fill=BOTH)
-        self.pixel_plot = tk.Button(self, text="plot data", command=self.draw_pixel_plot)
+        self.pixel_plot = tk.Button(self, text="Plot Data", command=self.draw_pixel_plot)
         self.pixel_plot.pack(fill=BOTH)
 
-        self.pixelplot0_button = tk.Button(self, text="raw data", command=self.drawPlotNearest)
+        self.pixelplot0_button = tk.Button(self, text="Raw Data", command=self.drawPlotNearest)
         self.pixelplot0_button.pack(side=LEFT, fill=BOTH)
 
-        self.pixelplot1_button = tk.Button(self, text="interpolate linear", command=self.drawPlotLinear)
+        self.pixelplot1_button = tk.Button(self, text="Interpolate Linear", command=self.drawPlotLinear)
         self.pixelplot1_button.pack(side=LEFT, fill=BOTH)
 
-        self.pixelplot3_button = tk.Button(self, text="interpolate cubic", command=self.drawPlotCubic)
+        self.pixelplot3_button = tk.Button(self, text="Interpolate Cubic", command=self.drawPlotCubic)
         self.pixelplot3_button.pack(side=LEFT, fill=BOTH)
 
 
-        self.fft_button = tk.Button(bottomFrame, text="generate FFT plot(frq v amp)", command=self.drawfft)
+        self.fft_button = tk.Button(bottomFrame, text="Generate FFT Plot(frq v amp)", command=self.drawfft)
         self.fft_button.pack(fill=BOTH)
 
 
-        self.ctf_button = tk.Button(bottomFrame, text="generate CTF plot", command=self.plot_ctf)
+        self.ctf_button = tk.Button(bottomFrame, text="Generate CTF Plot", command=self.plot_ctf)
         self.ctf_button.pack(fill=BOTH)
 
         self.radiusT = StringVar()
