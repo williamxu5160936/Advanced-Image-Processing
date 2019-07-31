@@ -173,14 +173,13 @@ def drawfft(self, interp_mode):
                   + str(round(main_per, 2)) + ' degrees\nOther Peaks: ' + str(other_x))
     else:
         plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
-                  + str(round(main_per, 2)) + ' degrees')
+                  + str(round(main_per, 2)) + ' degrees\nOther Peaks: ' + str(round(other_x[0], 2)) + ' rad^-1')
 
     plt.show()
     plt.show()
 
 def find_other_peak(self):
-    r = int(round(self.radius, 0))
-    xf, yf, N, func = get_fft(self, 0, r)
+    xf, yf, N, func = get_fft(self)  
     index, properties = signal.find_peaks(func,
                                           height=max(func)/2,
                                           threshold=None,
@@ -189,15 +188,16 @@ def find_other_peak(self):
                                           width=None,
                                           wlen=None,
                                           rel_height=None,
-                                          plateau_size=None)
+                                          plateau_size=None)  
     mainpeak = find_main_peak(self)
-    x = (xf[index]).tolist()
-    try:
-        x.remove(mainpeak)
-    except ValueError:
-        pass
-    y = np.interp(x, xf, func)
-    return y
+    x = xf[index].tolist()
+    i = 0
+    while(i < len(x)):
+        if(abs(x[i] - mainpeak) < 1):
+            del x[i]
+        i += 1
+    #amp = np.interp(x, xf, func)
+    return x
 
 def find_energy(self, ri):
     en = []
