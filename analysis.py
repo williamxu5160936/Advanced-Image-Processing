@@ -9,8 +9,8 @@ import scipy.interpolate
 from scipy import signal
 import cv2
 
-#mode = 1 for cubic spline, 0 for raw data
-def interpolate(self, mode):
+#mode = 1 for cubic spline, 0 for raw data, 2 for bilinear
+def interpolate(self, mode, radius):
     if mode == 1:
         z = self.image
 
@@ -22,15 +22,15 @@ def interpolate(self, mode):
 
         xcenter = int(round(float(self.x_center), 0))
         ycenter = int(round(float(self.y_center), 0))
-        r = int(round(float(self.radius), 0))
+        #r = int(round(float(self.radius), 0))
 
         interp = sp.interpolate.interp2d(x, y, z, 'cubic')
         vinterp = np.vectorize(interp)
 
-        arc = 8 * np.pi * r
+        arc = 8 * np.pi * radius
         ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
-        val = vinterp(xcenter + r * np.sin(ang),
-                      ycenter + r * np.cos(ang))
+        val = vinterp(xcenter + radius * np.sin(ang),
+                      ycenter + radius * np.cos(ang))
 
         #returns the angle measures(rad) vs amplitude(greyscale values)
         return ang, val
@@ -47,47 +47,76 @@ def interpolate(self, mode):
         ycenter = int(round(float(self.y_center), 0))
         r = int(round(float(self.radius), 0))
 
-        arc = 8 * np.pi * r
+        arc = 8 * np.pi * radius
 
         circumference_pixels = []
         ang = []
         angle = 0.0
+        #while angle < 360:
         while angle < 360:
-            xI = int(round(xcenter + r * math.cos(2.0 * math.pi * angle / 360.0), 0))
-            yI = int(round(ycenter + r * math.sin(2.0 * math.pi * angle / 360.0), 0))
-            angle = angle + (360 / (2 * math.pi * self.radius))
+            xI = int(round(xcenter + radius * math.cos(2.0 * math.pi * angle / 360.0), 0))
+            yI = int(round(ycenter + radius * math.sin(2.0 * math.pi * angle / 360.0), 0))
+            #angle = angle + (360 / (2 * math.pi * self.radius))
+            angle = angle + 0.5
+
             if xI >= 0 and xI < len(z[0]) and yI >= 0 and yI < len(z):
                 circumference_pixels.append(z[yI][xI])
-                ang.append(retAngle(xcenter, ycenter, xI, yI))
+                #ang.append(retAngle(xcenter, ycenter, xI, yI))
+                ang.append(angle * np.pi/180)
         ang = np.asarray(ang)
         circumference_pixels = np.asarray(circumference_pixels)
-        circumference_pixels = [x for _,x in sorted(zip(ang,circumference_pixels))]
+        circumference_pixels = [x for _, x in sorted(zip(ang, circumference_pixels))]
         ang.sort()
         return ang, circumference_pixels
-    
-def retAngle(xcenter, ycenter, xI, yI):
-    ans = math.degrees(math.atan2(yI-ycenter, xI-xcenter))
-    if(ans < 0):
-        ans += 360
-    return ans
+    if mode == 2:
+        z = self.image
 
-def drawPlot(self):
+        W = np.size(z, 1)
+        Y = np.size(z, 0)
+
+        x = np.arange(W)
+        y = np.arange(Y)
+
+        xcenter = int(round(float(self.x_center), 0))
+        ycenter = int(round(float(self.y_center), 0))
+        # r = int(round(float(self.radius), 0))
+
+        interp = sp.interpolate.interp2d(x, y, z, 'cubic')
+        vinterp = np.vectorize(interp)
+
+        arc = 8 * np.pi * radius
+        ang = np.linspace(0, 2 * np.pi, 720, endpoint=False)
+        val = vinterp(xcenter + radius * np.sin(ang),
+                      ycenter + radius * np.cos(ang))
+
+        # returns the angle measures(rad) vs amplitude(greyscale values)
+        return ang, val
+
+def retAngle(xcenter, ycenter, xI, yI):
+    ans = math.degrees(math.atan2(yI - ycenter, xI - xcenter))
+    if (ans < 0):
+        ans += 360
+    return ans * np.pi/180
+
+
+def drawPlot(self, interp_mode):
     plt.figure()
-    ang, val = interpolate(self, 0)
     r = int(round(self.radius, 0))
-    plt.plot(ang * 180 / np.pi, val, label='r={}'.format(r))
+    ang, val = interpolate(self, interp_mode, radius = r)
+    plt.plot([180/np.pi * i for i in ang], val, label='r={}'.format(r))
     plt.xlabel('degrees from polar axis at r')
     plt.ylabel('pixel greyscale values')
     plt.show()
 
 
-def drawfft(self):
-    xf, yf, N, func = get_fft(self)
+def drawfft(self, interp_mode):
+    r = int(round(self.radius, 0))
+    xf, yf, N, func = get_fft(self, interp_mode, radius=r)
 
     index, properties = signal.find_peaks(func,
                                           height=None,
                                           threshold=None,
-                                          distance=None,
+                                          distance=5,
                                           prominence=10,
                                           width=None,
                                           wlen=None,
@@ -121,27 +150,54 @@ def drawfft(self):
     ax.plot(xf[index], func[index], marker="o", ls="", ms=3)
 
     ax.plot(xf[min], func[min], marker="o", ls="", ms=3)
-    peaks, ind = find_peaks(self)
+    peaks, ind = find_peaks(self, interp_mode = 1)
     ax.set(xlim=(0, 1.25*np.max(peaks)), ylim=(0, np.max(func) * 1.25))
 
-    main_x = find_main_peak(self)
-    
-    other_x = find_other_peak(self)
-
-    
+    main_x, ind_x = find_main_peak(self)
     main_per = 1/main_x * 180/np.pi
     self.find_main_peak()
     plt.xlabel('frequency(1/rad)')
     plt.ylabel('amplitude')
-    if(len(other_x) != 0):
+    plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
+              + str(round(main_per, 2)) + ' degrees')
+
+    
+    other_x = find_other_peak(self)
+
+
+    self.find_main_peak()
+    plt.xlabel('frequency(1/rad)')
+    plt.ylabel('amplitude')
+    if (len(other_x) != 0):
         plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
                   + str(round(main_per, 2)) + ' degrees\nOther Peaks: ' + str(other_x))
     else:
         plt.title('pattern frequency at ' + str(round(main_x, 2)) + ' rad^-1, periodicity at '
                   + str(round(main_per, 2)) + ' degrees')
-        
+
+    plt.show()
     plt.show()
 
+def find_other_peak(self):
+    r = int(round(self.radius, 0))
+    xf, yf, N, func = get_fft(self, 0, r)
+    index, properties = signal.find_peaks(func,
+                                          height=max(func)/2,
+                                          threshold=None,
+                                          distance=None,
+                                          prominence=10,
+                                          width=None,
+                                          wlen=None,
+                                          rel_height=None,
+                                          plateau_size=None)
+    mainpeak = find_main_peak(self)
+    x = (xf[index]).tolist()
+    try:
+        x.remove(mainpeak)
+    except ValueError:
+        pass
+    y = np.interp(x, xf, func)
+    return y
 
 def find_energy(self, ri):
     en = []
@@ -184,7 +240,7 @@ def find_energy(self, ri):
     index, properties = signal.find_peaks(func,
                                           height=None,
                                           threshold=None,
-                                          distance=None,
+                                          distance=5,
                                           prominence=10,
                                           width=None,
                                           wlen=None,
@@ -234,27 +290,7 @@ def find_main_peak(self):
     r = int(round(float(self.radius), 0))
     en, ind = find_energy(self, r)
     p = max_pos(self, en)
-    return ind[p]
-
-def find_other_peak(self):
-    xf, yf, N, func = get_fft(self)  
-    index, properties = signal.find_peaks(func,
-                                          height=max(func)/2,
-                                          threshold=None,
-                                          distance=None,
-                                          prominence=10,
-                                          width=None,
-                                          wlen=None,
-                                          rel_height=None,
-                                          plateau_size=None)  
-    mainpeak = find_main_peak(self)
-    x = (xf[index]).tolist()
-    try:
-        x.remove(mainpeak)
-    except ValueError:
-        pass
-    y = np.interp(x, xf, func)
-    return y
+    return ind[p], p
 
 
 def max_pos(self, list):
@@ -267,34 +303,41 @@ def max_pos(self, list):
     return index
 
 
-def get_fft(self):
-    # Number of samplepoints
-    N = 720
-    # sample spacing: 0.5 degree
-    T = np.pi / 360
-    z = self.image
+def get_fft(self, interp_mode, radius):
+    # # # Number of samplepoints
+    # N = 720
+    # # sample spacing: 0.5 degree
+    # T = np.pi / 360
+    # z = self.image
+    #
+    # W = np.size(z, 1)
+    # Y = np.size(z, 0)
+    #
+    # xi = np.arange(W)
+    # yi = np.arange(Y)
+    #
+    # xcenter = int(round(float(self.x_center), 0))
+    # ycenter = int(round(float(self.y_center), 0))
+    # r = int(round(float(self.radius), 0))
+    #
+    # interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
+    # vinterp = np.vectorize(interp)
+    #
+    #
+    # ang = np.linspace(0, N * T, N, endpoint=False)
 
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
+    # arc = 8 * np.pi * r
+    #         ang = np.linspace(0, 2 * np.pi, int(round(arc * 2,0)), endpoint=False)
+    #
+    # N = ang.size
+    # y = vinterp(xcenter + r * np.sin(ang),
+    #             ycenter + r * np.cos(ang))
 
-    xi = np.arange(W)
-    yi = np.arange(Y)
-
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
-    r = int(round(float(self.radius), 0))
-
-    interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-    vinterp = np.vectorize(interp)
-
-    arc = 2 * np.pi * r
-    ang = np.linspace(0, N * T, N, endpoint=False)
-
+    #y = scipy.signal.detrend(y)
+    ang, y = interpolate(self, interp_mode, radius)
     N = ang.size
-    y = vinterp(xcenter + r * np.sin(ang),
-                ycenter + r * np.cos(ang))
-
-    # y = scipy.signal.detrend(y)
+    #not evenly spaced for the raw data!
+    T = np.pi/360
     yf = scipy.fftpack.fft(y - np.mean(y))
 
     xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
@@ -302,38 +345,40 @@ def get_fft(self):
     return xf, yf, N, func
 
 
-def find_peaks(self):
-    # Number of samplepoints
-    N = 720
-    # sample spacing: 0.5 degree
-    T = np.pi / 360
-    z = self.image
-
-    W = np.size(z, 1)
-    Y = np.size(z, 0)
-
-    xi = np.arange(W)
-    yi = np.arange(Y)
-
-    xcenter = int(round(float(self.x_center), 0))
-    ycenter = int(round(float(self.y_center), 0))
+def find_peaks(self, interp_mode):
+    # # Number of samplepoints
+    # N = 720
+    # # sample spacing: 0.5 degree
+    # T = np.pi / 360
+    # z = self.image
+    #
+    # W = np.size(z, 1)
+    # Y = np.size(z, 0)
+    #
+    # xi = np.arange(W)
+    # yi = np.arange(Y)
+    #
+    # xcenter = int(round(float(self.x_center), 0))
+    # ycenter = int(round(float(self.y_center), 0))
+    # r = int(round(float(self.radius), 0))
+    #
+    # interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
+    # vinterp = np.vectorize(interp)
+    #
+    # arc = 2 * np.pi * r
+    # ang = np.linspace(0, N * T, N, endpoint=False)
+    #
+    # N = ang.size
+    # y = vinterp(xcenter + r * np.sin(ang),
+    #             ycenter + r * np.cos(ang))
+    #
+    # # y = scipy.signal.detrend(y)
+    # yf = scipy.fftpack.fft(y - np.mean(y))
+    #
+    # xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
+    # func = 2.0 / N * np.abs(yf[:N // 2])
     r = int(round(float(self.radius), 0))
-
-    interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-    vinterp = np.vectorize(interp)
-
-    arc = 2 * np.pi * r
-    ang = np.linspace(0, N * T, N, endpoint=False)
-
-    N = ang.size
-    y = vinterp(xcenter + r * np.sin(ang),
-                ycenter + r * np.cos(ang))
-
-    # y = scipy.signal.detrend(y)
-    yf = scipy.fftpack.fft(y - np.mean(y))
-
-    xf = np.linspace(0.0, 1.0 / (2.0 * T), N // 2)
-    func = 2.0 / N * np.abs(yf[:N // 2])
+    xf, yf, N, func = get_fft(self, interp_mode, radius=r)
     index, properties = signal.find_peaks(func,
                                           height=None,
                                           threshold=None,
@@ -346,90 +391,62 @@ def find_peaks(self):
     return xf[index], index
 
 
-def compute_mtf(self):
+def compute_mtf(self, interp_mode):
     r = int(round(float(self.radius), 0))
     mtf_final = []
     bounds = np.linspace(0, r, r)
-    ang, val = interpolate(self, 1)
+    ang, val = interpolate(self, interp_mode, radius=r)
     N = len(ang)
 
     mtf = np.absolute(scipy.fftpack.fft(val - np.mean(val)))
     func = 2.0 / N * np.abs(mtf[:N // 2])
     max = np.amax(func)
     # print(ind)
-    qf = find_main_peak(self)
+    qf, main_index = find_main_peak(self)
 
     for ri in bounds:
-        N = 720
-        # sample spacing: 0.5 degree
-        T = np.pi / 360
-        z = self.image
 
-        W = np.size(z, 1)
-        Y = np.size(z, 0)
-
-        xi = np.arange(W)
-        yi = np.arange(Y)
-
-        xcenter = int(round(float(self.x_center), 0))
-        ycenter = int(round(float(self.y_center), 0))
-
-        interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
-        vinterp = np.vectorize(interp)
-
-        ang = np.linspace(0, N * T, N, endpoint=False)
-
-        N = ang.size
-        y = vinterp(xcenter + ri * np.sin(ang),
-
-                    ycenter + ri * np.cos(ang))
-
-        mtf = np.absolute(scipy.fftpack.fft(y - np.mean(y)))
-        func = 2.0 / N * np.abs(mtf[:N // 2])
-        #n, positions = find_energy(self, ri)
-        # print('main peak')
-
-        peaks, indexes = find_peaks(self)
-        #print('qf' + str(qf))
+        # N = 720
+        # # sample spacing: 0.5 degree
+        # T = np.pi / 360
+        # z = self.image
+        #
+        # W = np.size(z, 1)
+        # Y = np.size(z, 0)
+        #
+        # xi = np.arange(W)
+        # yi = np.arange(Y)
+        #
+        # xcenter = int(round(float(self.x_center), 0))
+        # ycenter = int(round(float(self.y_center), 0))
+        #
+        # interp = sp.interpolate.interp2d(xi, yi, z, 'cubic')
+        # vinterp = np.vectorize(interp)
+        #
+        # ang = np.linspace(0, N * T, N, endpoint=False)
+        #
+        # N = ang.size
+        # y = vinterp(xcenter + ri * np.sin(ang),
+        #
+        #             ycenter + ri * np.cos(ang))
+        #
+        # mtf = np.absolute(scipy.fftpack.fft(y - np.mean(y)))
+        # func = 2.0 / N * np.abs(mtf[:N // 2])
+        xf, yf, N, func = get_fft(self, interp_mode, radius=ri)
+        peaks, indexes = find_peaks(self, interp_mode)
         ap = 0.0
         for peak in range(len(peaks)):
             if abs(peaks[peak] - qf) < 0.01:
                 ap = func[indexes[peak]]
         mtf_final.append(ap)
-        # print((np.max(y) - np.min(y)) / np.amax(mtf))
 
-        # ---------------------energy
-
-        # print(positions)
-        # if len(n) > 0:
-        #     q = 0.0
-        #     for i in range(len(positions)):
-        #         if math.fabs(positions[i] - qf) < 0.01:
-        #             q = n[i]
-        #
-        #     yen.append(q / np.sum(n))
-        # else:
-        #     yen.append(0.0)
-
-    # mtf_final_smooth = mtf_final_smooth[1024:1151] / np.amax(mtf_final_smooth[1024:1151])
     xr = np.linspace(0, r, r)
-
-    #fig, ax = plt.subplots()
-    #start = np.interp(max, mtf_final, xr)
     db_3_interp = np.interp(0.5 * max, mtf_final, xr)
-    #ax.plot(1/(2.0 * np.pi * start), max, marker="o", ls="", ms=3)
-    #ax.plot(1/(2.0 * np.pi * db_3_interp), 0.5 * max, marker="o", ls="", ms=3)
-    # ax.plot(1/(2.0 * np.pi * xr), mtf_final)
-    # ax.set(xlim=(0, 0.05), ylim=(0, max*1.25))
-    # plt.xlabel("spatial frequency(AU)")
-    # plt.ylabel("amplitude of central peak")
-    # plt.title('3dB point at spatial frequency' + str(round(1/(2.0 * np.pi * db_3_interp), 4)))
-    # plt.show()
-
     return qf * 1/xr, mtf_final, qf * 1/db_3_interp, qf*1/self.radius, max
 
-def plot_mtf(self):
-    spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self)
+
+def plot_mtf(self, interp_mode):
+    spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self, interp_mode)
     fig, ax = plt.subplots()
     ax.plot(spatial, contrast)
     ax.plot(spatial_db3, max*.5, marker="o", ls="", ms=3)
@@ -460,7 +477,11 @@ if __name__ == '__main__':
         if task_perform == 2:
             spatial, contrast, spatial_db3, start_spatial, max = compute_mtf(self=user_select)
             print('3dB point at spatial frequency ' + str(spatial_db3) + ' pixel^-1')
-
-
+        elif task_perform == 1:
+            main_x, ind_x = find_main_peak(self=user_select)
+            print('spoke pattern frequency at ' + str(round(main_x, 2)) + ' radian^-1')
+        continue_option = float(input('Enter 1 to continue, 0 to quit'))
+        if continue_option == 0:
+            keeprunning = False
 
 
