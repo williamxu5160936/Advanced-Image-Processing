@@ -93,18 +93,11 @@ def drawfft(self):
                   + str(round(main_per, 2)) + ' degrees')
     plt.show()
 
-    
 def find_amplitude(self):
     xf, yf, N, func = get_fft(self, self.radius)
     peaks, index = find_peaks(self)
     amp = []
-    
-    peaks_x = peakutils.interpolate(xf, func, ind=index)
-    i = 0
-    while (i < len(peaks_x)):
-        amp.append(np.interp(peaks_x[i], xf, func))
-        i += 1
-    return amp, xf[index]
+    return func[index], xf[index]
 
 
 def find_main_peak(self):
@@ -119,8 +112,16 @@ def find_main_peak(self):
 
 def find_other_peak(self):
     xf, yf, N, func = get_fft(self, self.radius)  
-    peaks, index = find_peaks(self)
     mainpeak = find_main_peak(self)
+    index, properties = signal.find_peaks(func,
+                                          height=max(func)/2,
+                                          threshold=None,
+                                          distance=None,
+                                          prominence=10,
+                                          width=None,
+                                          wlen=None,
+                                          rel_height=None,
+                                          plateau_size=None)
     x = xf[index].tolist()
     i = 0
     while(i < len(x)):
@@ -128,7 +129,6 @@ def find_other_peak(self):
             del x[i]
         i += 1
     return x
-
 
 def get_fft(self, r):
     # Number of samplepoints
